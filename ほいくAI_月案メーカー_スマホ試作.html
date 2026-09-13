@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ほいくAI 月案メーカー</title>
+<meta name="theme-color" content="#f4f0e8">
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f5f2ec;color:#292929;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif}
+.app{max-width:760px;margin:auto;padding:18px 14px 50px}.top{padding:18px 4px 12px}.logo{font-size:13px;font-weight:800;letter-spacing:.08em;color:#6b6258}.top h1{font-size:28px;margin:5px 0}.top p{color:#746f68;margin:0;font-size:14px}
+.card{background:#fff;border:1px solid #e8e2d8;border-radius:18px;padding:18px;margin:12px 0;box-shadow:0 4px 18px #5c493b0d}
+h2{font-size:17px;margin:0 0 14px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field.full{grid-column:1/-1}label{font-weight:750;font-size:13px;display:block;margin-bottom:6px;color:#4d4943}
+input,textarea,select{width:100%;border:1px solid #ddd7ce;border-radius:11px;padding:12px;font:inherit;font-size:15px;background:#fff;color:#222}
+textarea{min-height:84px;resize:vertical}.hint{font-size:11px;color:#888;margin-top:5px}
+button{border:0;border-radius:12px;padding:13px 16px;font:inherit;font-weight:750;cursor:pointer}.primary{width:100%;background:#2d2a27;color:white;font-size:17px}.secondary{background:#eee9e2}
+.actions{display:flex;gap:8px;margin-top:12px}.actions button{flex:1}
+#result{display:none}.resultbox{white-space:pre-wrap;line-height:1.85;font-size:14px}
+.loading{display:none;text-align:center;padding:20px;color:#6d665e}
+.badge{display:inline-block;background:#eee9e2;border-radius:999px;padding:5px 9px;font-size:11px;font-weight:700;margin-bottom:10px}
+.warning{font-size:11px;color:#756e66;line-height:1.6}
+@media(max-width:600px){.grid{grid-template-columns:1fr}.field.full{grid-column:auto}.app{padding:12px 10px 40px}}
+@media print{body{background:#fff}.top,.inputcard,.actions,.warning{display:none!important}.card{border:0;box-shadow:none;padding:0}.resultbox{font-size:12px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div class="logo">HOIKU AI / PROTOTYPE</div>
+    <h1>🧸 月案メーカー</h1>
+    <p>子どもの姿を入力して、月案のたたき台をつくる</p>
+  </div>
+
+  <div class="card inputcard">
+    <h2>① クラス情報</h2>
+    <div class="grid">
+      <div class="field"><label>対象年齢</label><select id="age"><option>3歳児</option></select></div>
+      <div class="field"><label>対象月</label><select id="month"><option>11月</option></select></div>
+      <div class="field full"><label>最近の子どもの様子 *</label><textarea id="children" placeholder="例：友達と一緒に遊ぶことが増えた。落ち葉を集めるのが好き。自分で着替えようとする姿がある。"></textarea></div>
+      <div class="field"><label>健康・生活</label><textarea id="health" placeholder="衣服、手洗い、食事、午睡など"></textarea></div>
+      <div class="field"><label>友達との関わり</label><textarea id="friends" placeholder="遊び、トラブル、協力など"></textarea></div>
+      <div class="field"><label>言葉</label><textarea id="language" placeholder="会話、経験を話す、気持ちを伝えるなど"></textarea></div>
+      <div class="field"><label>自然・環境</label><textarea id="nature" placeholder="秋の自然、散歩、虫など"></textarea></div>
+      <div class="field"><label>表現</label><textarea id="expression" placeholder="歌、製作、絵、リズムなど"></textarea></div>
+      <div class="field"><label>運動・戸外遊び</label><textarea id="exercise" placeholder="鬼ごっこ、散歩、遊具など"></textarea></div>
+      <div class="field full"><label>気になる姿・配慮事項</label><textarea id="concern" placeholder="例：気持ちがぶつかると手が出ることがある。"></textarea></div>
+      <div class="field"><label>今月のキーワード</label><input id="keywords" value="秋、戸外遊び、友達との関わり、生活習慣"></div>
+      <div class="field"><label>主な行事・予定</label><input id="events" placeholder="遠足、誕生会、避難訓練など"></div>
+      <div class="field"><label>保護者支援</label><textarea id="parents"></textarea></div>
+      <div class="field"><label>異年齢児との関わり</label><textarea id="mixed"></textarea></div>
+      <div class="field full"><label>園独自の方針・今月大切にしたいこと</label><textarea id="policy"></textarea></div>
+    </div>
+    <div style="margin-top:16px"><button class="primary" onclick="generate()">✨ 月案を生成する</button></div>
+    <p class="warning">※この試作はブラウザ内だけで動きます。本物のAI APIには接続していません。実際の園児名・病歴・家庭事情などの個人情報は入力しないでください。</p>
+  </div>
+
+  <div class="card" id="result">
+    <span class="badge">GENERATED DRAFT</span>
+    <h2>② 生成された月案</h2>
+    <div class="resultbox" id="output"></div>
+    <div class="actions">
+      <button class="secondary" onclick="copyResult()">📋 コピー</button>
+      <button class="secondary" onclick="window.print()">🖨 PDF / 印刷</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const V=id=>document.getElementById(id).value.trim();
+function generate(){
+ const c=V("children")||"友達と一緒に遊ぶ姿や、秋の自然に興味を持つ姿が見られる。";
+ const h=V("health")||"気温差に留意し、衣服の調節や手洗いを促しながら健康に過ごせるようにする。";
+ const f=V("friends")||"気の合う友達と遊ぶことを楽しむ一方、思いがぶつかる場面もある。";
+ const l=V("language")||"自分の経験や思いを保育士や友達に伝えようとする。";
+ const n=V("nature")||"落ち葉や木の実など秋の自然物に興味を持つ。";
+ const e=V("expression")||"歌や製作を楽しみ、自分なりに表現しようとする。";
+ const x=V("exercise")||"戸外で身体を動かすことを楽しむ。";
+ const co=V("concern")||"友達との思いのぶつかり合いでは、言葉で伝える経験につなげる。";
+ const k=V("keywords"), ev=V("events")||"実際の園の11月行事を入力して更新";
+ const p=V("parents")||"園での子どもの姿や体調、衣服の調節について家庭と共有する。";
+ const m=V("mixed")||"異年齢児との遊びや行事を通して、相手を意識して関わる経験を大切にする。";
+ const pol=V("policy")||"一人一人の発達や気持ちを受け止め、自分でやってみようとする姿を支える。";
+ const out=`【3歳児 11月 月間指導計画｜AI生成たたき台】
+
+■ 月初めの園児の姿
+${c}
+
+■ 配慮すべき事項
+${h}
+${co}
+
+■ 保護者支援
+${p}
+
+■ 異年齢児保育
+${m}
+
+■ 園行事及び園事業
+${ev}
+
+■ 月のねらい
+・秋の自然に触れ、季節の変化や発見を楽しむ。
+・友達と一緒に遊ぶ中で、自分の思いを言葉で伝えたり、相手の思いに気付いたりする。
+・身の回りのことを自分でしようとする気持ちを大切にする。
+・戸外で十分に身体を動かし、健康に過ごす。
+
+■ 週別のねらい
+【1週】秋の自然に触れながら、戸外で身体を動かして遊ぶ。
+【2週】友達と一緒に遊ぶ楽しさを味わい、言葉のやり取りを楽しむ。
+【3週】身の回りのことを自分でしようとし、できた喜びを感じる。
+【4週】秋の自然や季節の行事に親しみ、友達と一緒に表現することを楽しむ。
+
+■ 養護（生命の保持・情緒の安定）
+・気温差や活動量に応じて衣服の調節、水分補給、休息を取り入れる。
+・一人一人の気持ちを受け止め、安心して思いを表現できるようにする。
+
+■ 教育
+【健康】${x}
+【人間関係】${f}
+【環境】${n}
+【言葉】${l}
+【表現】${e}
+
+■ 環境構成・保育者の援助
+・秋の自然物を見つけたり、分類・観察・製作に活用したりできる環境を用意する。
+・友達とのやり取りが生まれやすい玩具や場を設定し、必要に応じて保育士が仲立ちする。
+・「貸して」「一緒にやろう」など、実際の場面で使える言葉を知らせる。
+・${pol}
+
+■ 今月のキーワード
+${k}
+
+■ 保育に対する自己評価
+【11月末記入】子どもの姿の変化：
+【11月末記入】環境構成・援助の振り返り：
+【11月末記入】次月につなげたいこと：`;
+ document.getElementById("output").textContent=out;
+ document.getElementById("result").style.display="block";
+ document.getElementById("result").scrollIntoView({behavior:"smooth"});
+}
+function copyResult(){navigator.clipboard.writeText(document.getElementById("output").textContent).then(()=>alert("コピーしました！")).catch(()=>alert("コピーできない場合は生成結果を長押ししてコピーしてください。"))}
+</script>
+</body></html>
