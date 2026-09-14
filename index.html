@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>保育AI｜月案メーカー</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;background:#f6f7f9;color:#222}
+header{background:#fff;border-bottom:1px solid #ddd;padding:18px 16px;position:sticky;top:0;z-index:2}
+h1{font-size:22px;margin:0}.sub{font-size:12px;color:#777;margin-top:4px}
+main{max-width:760px;margin:auto;padding:16px}
+.card{background:#fff;border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 2px 10px #0000000a}
+h2{font-size:17px;margin:0 0 12px}label{display:block;font-weight:700;font-size:13px;margin:12px 0 6px}
+input,textarea,select{width:100%;font:inherit;border:1px solid #d6d9de;border-radius:10px;padding:11px;background:#fff}
+textarea{min-height:90px;resize:vertical}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+button{border:0;border-radius:11px;padding:13px 16px;font-weight:700;font-size:15px;cursor:pointer}
+.primary{width:100%;background:#222;color:#fff;margin-top:12px}.secondary{background:#eee;color:#222;margin-right:8px}
+#result{white-space:pre-wrap;line-height:1.75;font-size:14px}
+.actions{display:flex;margin-top:12px;flex-wrap:wrap;gap:8px}
+.actions button{margin:0}
+.note{font-size:11px;color:#777;line-height:1.5}
+</style>
+</head>
+<body>
+<header><h1>保育AI｜月案メーカー</h1><div class="sub">子どもの姿から、月案のたたき台を作る試作版</div></header>
+<main>
+<section class="card">
+<h2>基本情報</h2>
+<div class="grid">
+<div><label>年齢・クラス</label><select id="age"><option>0歳児</option><option>1歳児</option><option>2歳児</option><option selected>3歳児</option><option>4歳児</option><option>5歳児</option></select></div>
+<div><label>月</label><select id="month"><option>4月</option><option>5月</option><option>6月</option><option>7月</option><option>8月</option><option>9月</option><option>10月</option><option selected>11月</option><option>12月</option><option>1月</option><option>2月</option><option>3月</option></select></div>
+</div>
+<label>月初めの子どもの姿</label><textarea id="children" placeholder="例：友達と一緒に遊ぶ姿が増えた。自分の思いを言葉で伝えようとする姿がある。"></textarea>
+<label>健康・生活面</label><textarea id="health" placeholder="例：朝夕の気温差が大きい。衣服の調整を自分でしようとする。"></textarea>
+<label>友達関係・言葉・遊び</label><textarea id="relations" placeholder="例：ごっこ遊びを友達と楽しむ一方、玩具の取り合いもある。"></textarea>
+<label>自然・表現・運動</label><textarea id="expression" placeholder="例：落ち葉や木の実に興味を持つ。戸外で走ったり跳んだりすることを楽しむ。"></textarea>
+<label>気になる姿・配慮したいこと</label><textarea id="concerns" placeholder="例：気持ちを言葉にする前に手が出ることがある。"></textarea>
+<label>行事・季節・園の予定</label><textarea id="events" placeholder="例：散歩、焼き芋会、誕生会など"></textarea>
+</section>
+
+<section class="card">
+<h2>支援に反映したいこと</h2>
+<label>保護者支援</label><textarea id="parents" placeholder="例：園での友達との関わりや、衣服調整について共有したい。"></textarea>
+<label>異年齢児保育</label><textarea id="mixed" placeholder="例：年上児との交流を楽しめる機会を作る。"></textarea>
+<label>園の方針・クラスで大切にしたいこと</label><textarea id="policy" placeholder="例：一人ひとりの思いを受け止め、自分で考えて行動する経験を大切にする。"></textarea>
+<button class="primary" onclick="generate()">月案のたたき台を作る</button>
+<p class="note">※この試作版は入力内容を端末内で処理するだけで、外部AIには送信しません。個人名などの個人情報は入力しないでください。</p>
+</section>
+
+<section class="card" id="outputCard" style="display:none">
+<h2>生成結果</h2>
+<div id="result"></div>
+<div class="actions">
+<button class="secondary" onclick="copyResult()">コピー</button>
+<button class="secondary" onclick="window.print()">印刷・PDF</button>
+</div>
+</section>
+</main>
+
+<script>
+function v(id){return document.getElementById(id).value.trim()}
+function generate(){
+ const age=v("age"), month=v("month"), children=v("children"), health=v("health"), relations=v("relations"), expression=v("expression"), concerns=v("concerns"), events=v("events"), parents=v("parents"), mixed=v("mixed"), policy=v("policy");
+ const result =
+`【${age} ${month} 月間指導計画（たたき台）】
+
+■ 月初めの園児の姿
+${children || "日々の遊びや生活の中で、友達との関わりを広げながら、自分の思いを表現する姿が見られる。"}
+
+■ 配慮すべき事項
+${concerns || "一人ひとりの気持ちや発達の違いを丁寧に捉え、安心して自己表現できるよう援助する。"}
+${health ? "\n健康・生活面：\n"+health : ""}
+
+■ 月のねらい
+・季節の変化を感じながら、健康に過ごす。
+・友達と一緒に遊ぶ楽しさを味わい、思いや考えを伝え合う。
+・身近な自然や行事に興味を持ち、発見や経験を遊び・表現につなげる。
+・身の回りのことを自分でしようとする気持ちを大切にする。
+
+■ 週別ねらい
+第1週：生活リズムを整え、秋から冬への季節の変化を感じる。
+第2週：友達との関わりを楽しみ、思いを伝えたり聞いたりする。
+第3週：自然や行事に触れ、発見したことを遊びや表現に取り入れる。
+第4週：できることを自分で行い、達成感を味わう。
+
+■ 養護
+・一人ひとりの健康状態や疲れを把握し、衣服調整や休息を適切に行う。
+・安心して気持ちを表現できるよう、保育者が受け止めて言葉にしていく。
+
+■ 教育
+【健康】戸外で十分に体を動かし、季節に合った生活習慣を身につける。
+【人間関係】友達と同じ遊びを楽しみ、思いを伝え合う経験を重ねる。
+【環境】${expression || "身近な自然に触れ、季節の変化や不思議に気づく。"}
+【言葉】${relations || "自分の思いを言葉で伝えたり、友達の話を聞いたりする。"}
+【表現】見たり感じたりしたことを、描画・製作・ごっこ遊びなどで表現する。
+
+■ 環境構成・援助
+・子ども同士の関わりが生まれやすい遊びや素材を用意する。
+・気持ちのぶつかりがあった際は双方の思いを受け止め、言葉で伝える方法を知らせる。
+・季節を感じられる自然物を保育室に取り入れ、遊びや製作につなげる。
+・自分で選び、試し、工夫できる時間と環境を確保する。
+
+${events ? "■ 行事・季節の活動\n"+events+"\n" : ""}
+${parents ? "■ 保護者支援\n"+parents+"\n" : "■ 保護者支援\n園での子どもの姿や成長を具体的に伝え、家庭と情報を共有する。\n"}
+${mixed ? "■ 異年齢児保育\n"+mixed+"\n" : "■ 異年齢児保育\n異年齢児との自然な関わりを大切にし、一緒に遊ぶ楽しさを味わえるようにする。\n"}
+${policy ? "■ 園・クラスの方針への反映\n"+policy+"\n" : ""}
+■ 保育に対する自己評価
+子ども一人ひとりの興味や思いを捉え、環境構成や援助が適切であったかを振り返る。`;
+
+ document.getElementById("result").textContent=result;
+ document.getElementById("outputCard").style.display="block";
+ document.getElementById("outputCard").scrollIntoView({behavior:"smooth"});
+}
+async function copyResult(){
+ const text=document.getElementById("result").textContent;
+ try{await navigator.clipboard.writeText(text);alert("コピーしました！")}catch(e){alert("コピーできませんでした。結果を長押ししてコピーしてください。")}
+}
+</script>
+</body>
+</html>
